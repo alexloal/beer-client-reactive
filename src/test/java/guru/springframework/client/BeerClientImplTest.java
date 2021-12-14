@@ -6,12 +6,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 class BeerClientImplTest {
@@ -104,6 +108,30 @@ class BeerClientImplTest {
 
         final ResponseEntity<Void> responseEntity = beerClient.updateBeer(beerDto.getId(), updatedBeer).block();
         assertThat(responseEntity.getStatusCode()).isEqualTo(NO_CONTENT);
+    }
+
+    @Test
+    void testDeleteBeerHandleException() {
+        final Mono<ResponseEntity<Void>> responseEntityMono = beerClient.deleteBeerById(UUID.randomUUID());
+        final ResponseEntity<Void> responseEntity = responseEntityMono
+                .onErrorResume(throwable -> {
+                    if (throwable instanceof WebClientResponseException exception) {
+                        return Mono.just(ResponseEntity.status(exception.getStatusCode()).build());
+                    } else {
+                        throw new RuntimeException(throwable);
+                    }
+                })
+                .block();
+        assertThat(responseEntity.getStatusCode()).isEqualTo(NOT_FOUND);
+    }
+
+    @Test
+    void deleteBeerByIdNotFound() {
+        final Mono<ResponseEntity<Void>> responseEntityMono = beerClient.deleteBeerById(UUID.randomUUID());
+        assertThrows(WebClientResponseException.class, () -> {
+            final ResponseEntity<Void> responseEntity = responseEntityMono.block();
+            assertThat(responseEntity.getStatusCode()).isEqualTo(NOT_FOUND);
+        });
     }
 
     @Test
