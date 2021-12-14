@@ -11,6 +11,8 @@ import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,6 +62,23 @@ class BeerClientImplTest {
 
         assertThat(beerDto.getId()).isEqualTo(beerId);
         assertThat(beerDto.getQuantityOnHand()).isNull();
+    }
+
+    @Test
+    void functionalTestGetBeerById() throws InterruptedException {
+        final AtomicReference<String> beerName = new AtomicReference<>();
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+        beerClient.listBeers(null, null, null, null, null)
+                .map(beerPageList -> beerPageList.getContent().get(0).getId())
+                .map(beerId -> beerClient.getBeerById(beerId, false))
+                .flatMap(beerDtoMono -> beerDtoMono)
+                .subscribe(beerDto -> {
+                    beerName.set(beerDto.getBeerName());
+                    countDownLatch.countDown();
+                });
+        countDownLatch.await();
+        assertThat(beerName.get()).isEqualTo("Really Good Beer");
     }
 
     @Test
