@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
-import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -26,9 +25,7 @@ class BeerClientImplTest {
 
     @Test
     void listBeers() {
-        final Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(null, null, null, null, null);
-
-        final BeerPagedList pagedList = beerPagedListMono.block();
+        final BeerPagedList pagedList = beerClient.listBeers(null, null, null, null, null).block();
 
         assertThat(pagedList).isNotNull();
         assertThat(pagedList.getContent().size()).isPositive();
@@ -36,9 +33,7 @@ class BeerClientImplTest {
 
     @Test
     void listBeersPageSize10() {
-        final Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(1, 10, null, null, null);
-
-        final BeerPagedList pagedList = beerPagedListMono.block();
+        final BeerPagedList pagedList = beerClient.listBeers(1, 10, null, null, null).block();
 
         assertThat(pagedList).isNotNull();
         assertThat(pagedList.getContent().size()).isEqualTo(10);
@@ -46,9 +41,7 @@ class BeerClientImplTest {
 
     @Test
     void listBeersNoRecords() {
-        final Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(10, 20, null, null, null);
-
-        final BeerPagedList pagedList = beerPagedListMono.block();
+        final BeerPagedList pagedList = beerClient.listBeers(10, 20, null, null, null).block();
 
         assertThat(pagedList).isNotNull();
         assertThat(pagedList.getContent().size()).isZero();
@@ -57,10 +50,7 @@ class BeerClientImplTest {
     @Disabled("API returning inventory when should not be")
     @Test
     void getBeerById() {
-        final Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(null, null, null, null, null);
-
-        final BeerPagedList pagedList = beerPagedListMono.block();
-        final UUID beerId = pagedList.getContent().get(0).getId();
+        final UUID beerId = beerClient.listBeers(null, null, null, null, null).block().getContent().get(0).getId();
 
         final BeerDto beerDto = beerClient.getBeerById(beerId, false).block();
 
@@ -70,10 +60,7 @@ class BeerClientImplTest {
 
     @Test
     void getBeerByIdShowInventoryTrue() {
-        final Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(null, null, null, null, null);
-
-        final BeerPagedList pagedList = beerPagedListMono.block();
-        final UUID beerId = pagedList.getContent().get(0).getId();
+        final UUID beerId = beerClient.listBeers(null, null, null, null, null).block().getContent().get(0).getId();
 
         final BeerDto beerDto = beerClient.getBeerById(beerId, true).block();
 
@@ -83,10 +70,7 @@ class BeerClientImplTest {
 
     @Test
     void getBeerByUPC() {
-        final Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(null, null, null, null, null);
-
-        final BeerPagedList pagedList = beerPagedListMono.block();
-        final String upc = pagedList.getContent().get(0).getUpc();
+        final String upc = beerClient.listBeers(null, null, null, null, null).block().getContent().get(0).getUpc();
 
         final BeerDto beerDto = beerClient.getBeerByUPC(upc).block();
 
@@ -109,8 +93,7 @@ class BeerClientImplTest {
 
     @Test
     void updateBeer() {
-        final BeerPagedList pagedList = beerClient.listBeers(null, null, null, null, null).block();
-        final BeerDto beerDto = pagedList.getContent().get(0);
+        final BeerDto beerDto = beerClient.listBeers(null, null, null, null, null).block().getContent().get(0);
 
         BeerDto updatedBeer = BeerDto.builder()
                 .beerName("Really Good Beer")
@@ -125,8 +108,7 @@ class BeerClientImplTest {
 
     @Test
     void deleteBeerById() {
-        final BeerPagedList pagedList = beerClient.listBeers(null, null, null, null, null).block();
-        final BeerDto beerDto = pagedList.getContent().get(0);
+        final BeerDto beerDto = beerClient.listBeers(null, null, null, null, null).block().getContent().get(0);
 
         final ResponseEntity<Void> responseEntity = beerClient.deleteBeerById(beerDto.getId()).block();
         assertThat(responseEntity.getStatusCode()).isEqualTo(NO_CONTENT);
